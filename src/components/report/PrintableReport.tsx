@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import confetti from 'canvas-confetti';
+import { useI18n } from '../../i18n/I18nContext';
 
 interface PrintableReportProps {
   session: AssessmentSession;
@@ -15,6 +16,7 @@ interface PrintableReportProps {
 export const PrintableReport: React.FC<PrintableReportProps> = ({ session, onToast }) => {
   const navigate = useNavigate();
   const reportRef = useRef<HTMLDivElement>(null);
+  const { t } = useI18n();
 
   const handlePrint = () => {
     window.print();
@@ -59,27 +61,27 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ session, onToa
       <div className="flex items-center justify-between gap-4 no-print glass-card p-4 rounded-2xl border border-slate-200 shadow-sm">
         <button
           onClick={() => navigate('/assessment')}
-          className="flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-primary-600 transition-colors"
+          className="flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-primary-600 transition-colors cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to Assessment</span>
+          <span>{t('common.backToHome')}</span>
         </button>
 
         <div className="flex items-center gap-3">
           <button
             onClick={handlePrint}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors shadow-sm cursor-pointer"
           >
             <Printer className="w-4 h-4 text-slate-500" />
-            <span>Print Report</span>
+            <span>{t('report.printReport')}</span>
           </button>
 
           <button
             onClick={handleDownloadPDF}
-            className="gradient-button px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-md shadow-primary-500/20"
+            className="gradient-button px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-md shadow-primary-500/20 cursor-pointer"
           >
             <Download className="w-4 h-4" />
-            <span>Download PDF</span>
+            <span>{t('report.downloadPdf')}</span>
           </button>
         </div>
       </div>
@@ -101,7 +103,7 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ session, onToa
               <h1 className="text-2xl font-black text-slate-900 tracking-tight">
                 Sanjeevani <span className="text-primary-600">AI</span>
               </h1>
-              <p className="text-xs font-semibold text-slate-500">FastAPI + Google Gemma Triage Summary</p>
+              <p className="text-xs font-semibold text-slate-500">{t('report.subtitle')}</p>
               <div className="flex items-center gap-1.5 mt-1 text-[11px] font-bold text-emerald-600">
                 <FileCheck2 className="w-3.5 h-3.5" /> Verified Triage Record
               </div>
@@ -125,17 +127,17 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ session, onToa
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-200">
           <div>
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-              Patient Profile
+              {t('report.patientInfo')}
             </span>
             <p className="text-sm font-extrabold text-slate-800 flex items-center gap-1.5">
               <User className="w-4 h-4 text-primary-600" />
-              Age {session.patientAge || '28'} • {session.patientGender || 'Unspecified'}
+              {t('report.age')} {session.patientAge || '28'} • {session.patientGender || 'Unspecified'}
             </p>
           </div>
 
           <div>
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-              Triage Urgency Rating
+              {t('report.riskAssessment')}
             </span>
             <div>
               <UrgencyBadge level={session.summary.urgency} size="md" />
@@ -144,7 +146,7 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ session, onToa
 
           <div>
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-              Gemma Confidence Score
+              {t('summary.confidenceTitle')}
             </span>
             <p className="text-sm font-extrabold text-primary-600">
               {session.summary.confidence}% Clinical Match
@@ -155,11 +157,11 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ session, onToa
         {/* Reported Symptoms Section */}
         <div className="space-y-3">
           <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider border-b pb-2 border-slate-200">
-            1. Primary Symptoms & Duration
+            1. {t('report.chiefComplaint')}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-              <span className="text-xs font-semibold text-slate-500 block mb-2">Identified Symptoms:</span>
+              <span className="text-xs font-semibold text-slate-500 block mb-2">{t('summary.symptomsTitle')}</span>
               <div className="flex flex-wrap gap-2">
                 {session.summary.symptoms.map((symptom, idx) => (
                   <span
@@ -173,7 +175,7 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ session, onToa
             </div>
 
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-              <span className="text-xs font-semibold text-slate-500 block mb-1">Reported Duration:</span>
+              <span className="text-xs font-semibold text-slate-500 block mb-1">{t('report.duration')}</span>
               <p className="text-base font-extrabold text-slate-800">{session.summary.duration || '2 days'}</p>
             </div>
           </div>
@@ -182,7 +184,7 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ session, onToa
         {/* Care Guidance & Recommendation */}
         <div className="space-y-3">
           <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider border-b pb-2 border-slate-200">
-            2. Recommended Next Step & Care Route
+            2. {t('report.summarySection')}
           </h3>
           <div className="p-5 bg-primary-50/70 border border-primary-200 rounded-2xl space-y-2">
             <p className="text-sm font-bold text-slate-900 leading-relaxed">
@@ -194,7 +196,7 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ session, onToa
         {/* Q&A Transcript Summary */}
         <div className="space-y-3">
           <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider border-b pb-2 border-slate-200">
-            3. Follow-up Assessment Log
+            3. {t('report.transcriptSection')}
           </h3>
           <div className="space-y-3">
             {session.messages.map((msg) => (
@@ -208,7 +210,7 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ session, onToa
               >
                 <div className="flex items-center justify-between font-bold">
                   <span className={msg.sender === 'gemma' ? 'text-primary-600' : 'text-slate-800'}>
-                    {msg.sender === 'gemma' ? 'Google Gemma AI (Backend)' : 'Patient Answer'}
+                    {msg.sender === 'gemma' ? 'Google Gemma AI' : 'Patient Answer'}
                   </span>
                   <span className="text-slate-400 font-normal">{msg.timestamp}</span>
                 </div>
@@ -225,7 +227,7 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ session, onToa
             <span>Healthcare Notice & Disclaimer</span>
           </div>
           <p className="leading-relaxed">
-            This report is generated by Sanjeevani AI (Google Gemma Backend integration). It does <strong>NOT</strong> constitute a formal diagnosis, medical treatment, or prescription. Please present this summary to a licensed physician or emergency medical clinician.
+            {t('report.disclaimer')}
           </p>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { ChatMessage } from '../../types/triage';
 import { Sparkles, User, Volume2, ChevronDown, ChevronUp, Cpu, Mic } from 'lucide-react';
 import { UrgencyBadge } from '../ui/UrgencyBadge';
 import { speechService } from '../../services/speechService';
+import { useI18n } from '../../i18n/I18nContext';
 
 interface ChatBubbleProps {
   message: ChatMessage;
@@ -11,6 +12,7 @@ interface ChatBubbleProps {
 
 export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, languageCode = 'en' }) => {
   const isGemma = message.sender === 'gemma';
+  const { t } = useI18n();
   const [showThoughtProcess, setShowThoughtProcess] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
@@ -54,19 +56,19 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, languageCode = 
                   Google Gemma AI
                 </span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary-50 text-primary-700 border border-primary-100 font-bold">
-                  Clinical Model 2.0
+                  Gemma 4.0
                 </span>
               </div>
 
               {/* Text to Speech Button */}
               <button
                 onClick={handleSpeak}
-                className={`p-1.5 rounded-lg transition-colors ${
+                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                   isSpeaking
                     ? 'bg-secondary-500 text-white animate-pulse'
                     : 'text-slate-400 hover:text-primary-600 hover:bg-slate-100'
                 }`}
-                title="Read aloud with Voice Speech"
+                title="Read aloud"
               >
                 <Volume2 className="w-4 h-4" />
               </button>
@@ -99,10 +101,10 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, languageCode = 
             <div className="mt-3 pt-3 border-t border-slate-100">
               <button
                 onClick={() => setShowThoughtProcess(!showThoughtProcess)}
-                className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-primary-600 transition-colors"
+                className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-primary-600 transition-colors cursor-pointer"
               >
                 <Cpu className="w-3.5 h-3.5" />
-                <span>Gemma Clinical Reasoning</span>
+                <span>{t('chat.thoughtProcessTitle')}</span>
                 {showThoughtProcess ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               </button>
 

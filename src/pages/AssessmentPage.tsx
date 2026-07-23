@@ -12,14 +12,15 @@ import { TypingIndicator } from '../components/ui/TypingIndicator';
 import { Toast, ToastMessage } from '../components/ui/Toast';
 import { Send, Sparkles, AlertOctagon, History, PanelRight, RotateCcw, Globe } from 'lucide-react';
 import { SUPPORTED_LANGUAGES } from '../data/languages';
+import { useI18n } from '../i18n/I18nContext';
 
 export const AssessmentPage: React.FC = () => {
+  const { currentLang, setLanguage, t } = useI18n();
   const [sessions, setSessions] = useState<AssessmentSession[]>(SAMPLE_TRIAGE_SESSIONS);
   const [activeSessionId, setActiveSessionId] = useState<string>(SAMPLE_TRIAGE_SESSIONS[0].id);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [currentLang, setCurrentLang] = useState('en');
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
   // Mobile Drawer Toggles
@@ -73,9 +74,9 @@ export const AssessmentPage: React.FC = () => {
 
       setSessions(prev => [newSession, ...prev]);
       setActiveSessionId(newSession.id);
-      showToast("Started new health assessment session.", "success");
+      showToast(t('common.success'), "success");
     } catch (err) {
-      showToast("Failed to initialize assessment session", "error");
+      showToast(t('common.error'), "error");
     } finally {
       setIsTyping(false);
     }
@@ -96,7 +97,7 @@ export const AssessmentPage: React.FC = () => {
     };
 
     const updatedMessages = [...activeSession.messages, userMessage];
-    const newTitle = activeSession.messages.length <= 1 
+    const newTitle = activeSession.messages.length <= 1
       ? (text.length > 25 ? text.substring(0, 25) + '...' : text)
       : activeSession.title;
 
@@ -146,16 +147,16 @@ export const AssessmentPage: React.FC = () => {
       }));
 
       if (apiResponse.healthSummary.emergency) {
-        showToast("⚠️ Emergency symptoms detected! Call emergency services immediately.", "error");
+        showToast(t('chat.emergencyAlertDesc'), "error");
       }
     } catch (err) {
-      showToast("Error communicating with triage API", "error");
+      showToast(t('common.error'), "error");
     } finally {
       setIsTyping(false);
     }
   };
 
-  // 3. Web Speech API Integration (Populates text input box)
+  // 3. Web Speech API Integration
   const handleToggleVoice = () => {
     if (isListening) {
       speechService.stopListening();
@@ -177,14 +178,14 @@ export const AssessmentPage: React.FC = () => {
             ? "मुझे 2 दिनों से तेज़ बुखार है"
             : "I have had a high fever for two days.";
           setInputText(sample);
-          showToast(`Voice simulated: "${sample}"`, "info");
+          showToast(`Voice input: "${sample}"`, "info");
         },
         () => setIsListening(false)
       );
 
       if (success) {
         setIsListening(true);
-        showToast("Listening... Speak your symptoms into your microphone.", "info");
+        showToast(t('chat.recording'), "info");
       }
     }
   };
@@ -197,10 +198,10 @@ export const AssessmentPage: React.FC = () => {
   return (
     <div className="h-screen flex flex-col bg-slate-50 overflow-hidden">
       <Toast toast={toast} onClose={() => setToast(null)} />
-      <Navbar currentLang={currentLang} onSelectLang={setCurrentLang} />
+      <Navbar currentLang={currentLang} onSelectLang={setLanguage} />
 
       <div className="flex-1 flex overflow-hidden relative">
-        
+
         {/* LEFT COLUMN: History Sidebar */}
         <ChatHistorySidebar
           sessions={sessions}
@@ -214,13 +215,13 @@ export const AssessmentPage: React.FC = () => {
 
         {/* CENTER COLUMN: Chat Interface */}
         <main className="flex-1 flex flex-col bg-slate-50/50 relative overflow-hidden">
-          
+
           {/* Top Bar for Chat Mobile & Controls */}
           <div className="px-4 py-3 bg-white/80 border-b border-slate-200/80 flex items-center justify-between shadow-sm z-10 backdrop-blur-md">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setLeftSidebarOpen(!leftSidebarOpen)}
-                className="md:hidden p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200"
+                className="md:hidden p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
                 title="Toggle History"
               >
                 <History className="w-5 h-5" />
@@ -244,12 +245,12 @@ export const AssessmentPage: React.FC = () => {
                 <Globe className="w-3.5 h-3.5 text-primary-600 ml-1.5" />
                 <select
                   value={currentLang}
-                  onChange={(e) => setCurrentLang(e.target.value)}
+                  onChange={(e) => setLanguage(e.target.value)}
                   className="bg-transparent text-slate-700 text-xs font-semibold focus:outline-none cursor-pointer pr-2"
                 >
                   {SUPPORTED_LANGUAGES.map(lang => (
                     <option key={lang.code} value={lang.code}>
-                      {lang.flag} {lang.name}
+                      {lang.flag} {lang.nativeName}
                     </option>
                   ))}
                 </select>
@@ -257,7 +258,7 @@ export const AssessmentPage: React.FC = () => {
 
               <button
                 onClick={handleClearCurrentSession}
-                className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+                className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 cursor-pointer"
                 title="Reset session"
               >
                 <RotateCcw className="w-4 h-4" />
@@ -265,7 +266,7 @@ export const AssessmentPage: React.FC = () => {
 
               <button
                 onClick={() => setRightSidebarOpen(!rightSidebarOpen)}
-                className="lg:hidden p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200"
+                className="lg:hidden p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
                 title="Toggle Summary"
               >
                 <PanelRight className="w-5 h-5" />
@@ -278,7 +279,7 @@ export const AssessmentPage: React.FC = () => {
             <div className="bg-red-600 text-white px-4 py-2.5 flex items-center justify-between shadow-md text-xs font-bold animate-pulse">
               <div className="flex items-center gap-2">
                 <AlertOctagon className="w-5 h-5 shrink-0 text-white" />
-                <span>EMERGENCY PROTOCOL: High-risk medical markers detected. Contact emergency services (911 / 108) immediately.</span>
+                <span>{t('chat.emergencyAlertTitle')}: {t('chat.emergencyAlertDesc')}</span>
               </div>
             </div>
           )}
@@ -292,18 +293,18 @@ export const AssessmentPage: React.FC = () => {
               <ChatBubble key={message.id} message={message} languageCode={currentLang} />
             ))}
 
-            {isTyping && <TypingIndicator statusText="FastAPI Backend calling Google Gemma LLM..." />}
+            {isTyping && <TypingIndicator statusText={t('chat.thinking')} />}
           </div>
 
           {/* Smart Suggestion Chips */}
           <div className="px-4 py-2 max-w-4xl w-full mx-auto">
             <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-              <span className="text-[11px] font-bold text-slate-400 shrink-0">Quick Symptoms:</span>
+              <span className="text-[11px] font-bold text-slate-400 shrink-0">{t('chat.suggestedAnswers')}</span>
               {INITIAL_SAMPLE_CHIPS.map((chip, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleSendMessage(chip)}
-                  className="px-3 py-1 rounded-full text-xs font-medium bg-white text-slate-700 hover:bg-primary-50 hover:text-primary-600 border border-slate-200 shadow-sm shrink-0 transition-colors"
+                  className="px-3 py-1 rounded-full text-xs font-medium bg-white text-slate-700 hover:bg-primary-50 hover:text-primary-600 border border-slate-200 shadow-sm shrink-0 transition-colors cursor-pointer"
                 >
                   + {chip}
                 </button>
@@ -314,7 +315,7 @@ export const AssessmentPage: React.FC = () => {
           {/* Input Bar Section */}
           <div className="p-4 bg-white/90 border-t border-slate-200 shadow-lg backdrop-blur-lg">
             <div className="max-w-4xl mx-auto flex items-center gap-3">
-              
+
               <VoiceButton
                 isListening={isListening}
                 onToggle={handleToggleVoice}
@@ -324,13 +325,7 @@ export const AssessmentPage: React.FC = () => {
               <div className="flex-1 relative">
                 <input
                   type="text"
-                  placeholder={
-                    isListening
-                      ? "Listening to voice input..."
-                      : currentLang === 'hi' 
-                        ? "अपने लक्षण लिखें (उदा: मुझे 2 दिनों से तेज़ बुखार है)..."
-                        : "Describe your symptoms (e.g., I have had a high fever for two days)..."
-                  }
+                  placeholder={isListening ? t('chat.listening') : t('chat.inputPlaceholder')}
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
@@ -341,15 +336,15 @@ export const AssessmentPage: React.FC = () => {
               <button
                 onClick={() => handleSendMessage()}
                 disabled={!inputText.trim()}
-                className="gradient-button p-3.5 rounded-2xl shadow-md shadow-primary-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                title="Send Message"
+                className="gradient-button p-3.5 rounded-2xl shadow-md shadow-primary-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+                title={t('chat.send')}
               >
                 <Send className="w-5 h-5" />
               </button>
             </div>
 
             <p className="text-[10px] text-center text-slate-400 font-medium mt-2">
-              Sanjeevani AI provides triage assessment guidance only. Not a medical diagnosis.
+              {t('summary.disclaimer')}
             </p>
           </div>
 

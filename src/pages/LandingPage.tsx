@@ -1,29 +1,33 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Sparkles, 
-  Mic, 
-  Globe2, 
-  BrainCircuit, 
-  AlertTriangle, 
-  FileText, 
-  ShieldCheck, 
-  Lock, 
-  Eye, 
-  ArrowRight, 
-  ChevronDown, 
-  ChevronUp, 
-  CheckCircle2, 
+import {
+  Sparkles,
+  Mic,
+  Globe2,
+  BrainCircuit,
+  AlertTriangle,
+  FileText,
+  ShieldCheck,
+  Lock,
+  Eye,
+  ArrowRight,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle2,
   Activity,
   HeartPulse,
-  Play
+  Thermometer,
+  Zap,
+  Activity as HeadacheIcon
 } from 'lucide-react';
 import { FAQ_DATA } from '../data/faqData';
 import { SUPPORTED_LANGUAGES } from '../data/languages';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
+import { useI18n } from '../i18n/I18nContext';
 
 export const LandingPage: React.FC = () => {
+  const { t, currentLang } = useI18n();
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [selectedDemoLang, setSelectedDemoLang] = useState('en');
 
@@ -52,35 +56,66 @@ export const LandingPage: React.FC = () => {
 
   const currentDemo = demoPhrases[selectedDemoLang] || demoPhrases.en;
 
+  const quickActionCards = [
+    {
+      title: t('quickActions.fever'),
+      subtitle: t('quickActions.feverSub'),
+      query: 'I have fever and body aches',
+      icon: Thermometer,
+      gradient: 'from-amber-500 to-orange-600',
+    },
+    {
+      title: t('quickActions.chestPain'),
+      subtitle: t('quickActions.chestPainSub'),
+      query: 'I have chest pain and shortness of breath',
+      icon: Zap,
+      gradient: 'from-red-500 to-rose-600',
+    },
+    {
+      title: t('quickActions.headache'),
+      subtitle: t('quickActions.headacheSub'),
+      query: 'I have severe headache',
+      icon: HeadacheIcon,
+      gradient: 'from-purple-500 to-indigo-600',
+    },
+    {
+      title: t('quickActions.stomachPain'),
+      subtitle: t('quickActions.stomachPainSub'),
+      query: 'I have stomach pain and nausea',
+      icon: Activity,
+      gradient: 'from-emerald-500 to-teal-600',
+    },
+  ];
+
   const features = [
     {
       icon: Globe2,
-      title: "Multilingual Support",
-      description: "Communicate fluently in 10+ regional & international languages including Hindi, English, Spanish, Bengali, Tamil, and Marathi.",
+      title: t('features.f1Title'),
+      description: t('features.f1Desc'),
       gradient: "from-blue-500 to-indigo-600"
     },
     {
       icon: Mic,
-      title: "Voice Conversations",
-      description: "Speak your symptoms naturally. Powered by real-time browser speech recognition and voice synthesis.",
+      title: t('features.f2Title'),
+      description: t('features.f2Desc'),
       gradient: "from-cyan-500 to-blue-600"
     },
     {
       icon: BrainCircuit,
-      title: "AI Follow-up Questions",
-      description: "Google Gemma intelligently asks targeted clinical questions based on your specific age, timeline, and symptoms.",
+      title: t('features.f3Title'),
+      description: t('features.f3Desc'),
       gradient: "from-purple-500 to-primary-600"
     },
     {
       icon: AlertTriangle,
-      title: "Urgency Assessment",
-      description: "Instant categorization into Low, Moderate, High, or Red-Alert Emergency levels to guide your next medical step.",
+      title: t('features.f4Title'),
+      description: t('features.f4Desc'),
       gradient: "from-amber-500 to-red-500"
     },
     {
       icon: FileText,
-      title: "Health Report Generation",
-      description: "Generate a downloadable, printable PDF summary complete with reported symptoms, triage rating, and physician notes.",
+      title: t('features.f5Title'),
+      description: t('features.f5Desc'),
       gradient: "from-emerald-500 to-teal-600"
     }
   ];
@@ -97,30 +132,30 @@ export const LandingPage: React.FC = () => {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            
+
             {/* Left Hero Content */}
             <div className="lg:col-span-7 space-y-8 text-center lg:text-left">
-              
+
               {/* Gemma Powered Badge */}
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 border border-primary-200/80 shadow-sm backdrop-blur-md">
                 <span className="flex h-2.5 w-2.5 rounded-full bg-primary-600 animate-ping"></span>
                 <span className="text-xs font-bold text-slate-800">
-                  Powered by <span className="gradient-text font-extrabold">Google Gemma AI</span>
+                  {t('hero.badge')}
                 </span>
                 <span className="text-[10px] px-2 py-0.5 rounded-md bg-primary-100 text-primary-700 font-extrabold uppercase">
-                  v2.0
+                  v4.0
                 </span>
               </div>
 
               {/* Main Headline */}
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.15]">
-                Healthcare Guidance in <br className="hidden sm:block" />
-                <span className="gradient-text">Your Language</span>
+                {t('hero.title1')} <br className="hidden sm:block" />
+                <span className="gradient-text">{t('hero.title2')}</span>
               </h1>
 
               {/* Subheading */}
               <p className="text-lg sm:text-xl text-slate-600 font-medium max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-                Powered by Google Gemma for multilingual AI-assisted health triage. Describe your symptoms naturally, answer intelligent follow-up questions, and receive instant urgency guidance.
+                {t('hero.subtitle')}
               </p>
 
               {/* Hero Action Buttons */}
@@ -130,38 +165,63 @@ export const LandingPage: React.FC = () => {
                   className="w-full sm:w-auto gradient-button px-8 py-4 rounded-2xl font-extrabold text-base flex items-center justify-center gap-3 shadow-xl shadow-primary-500/30 scale-100 hover:scale-105 transition-all"
                 >
                   <Sparkles className="w-5 h-5" />
-                  <span>Start Health Assessment</span>
+                  <span>{t('hero.startVoiceBtn')}</span>
                 </Link>
 
                 <a
                   href="#features"
                   className="w-full sm:w-auto px-7 py-4 rounded-2xl bg-white border border-slate-200 text-slate-700 font-bold text-base flex items-center justify-center gap-2 hover:bg-slate-100/80 transition-all shadow-sm"
                 >
-                  <span>Learn More</span>
+                  <span>{t('hero.viewDemoBtn')}</span>
                   <ArrowRight className="w-4 h-4 text-slate-400" />
                 </a>
               </div>
 
+              {/* Quick Actions Starter Grid */}
+              <div className="pt-4 space-y-3">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('hero.quickActionTitle')}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {quickActionCards.map((card, index) => {
+                    const CardIcon = card.icon;
+                    return (
+                      <Link
+                        key={index}
+                        to={`/assessment?q=${encodeURIComponent(card.query)}`}
+                        className="flex items-center gap-3 p-3 rounded-2xl bg-white/90 border border-slate-200/80 hover:border-primary-400 hover:bg-primary-50/50 shadow-sm transition-all group"
+                      >
+                        <div className={`w-9 h-9 rounded-xl bg-gradient-to-tr ${card.gradient} text-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform`}>
+                          <CardIcon className="w-4 h-4" />
+                        </div>
+                        <div className="text-left overflow-hidden">
+                          <h4 className="text-xs font-bold text-slate-900 group-hover:text-primary-600 transition-colors truncate">{card.title}</h4>
+                          <p className="text-[11px] text-slate-500 truncate">{card.subtitle}</p>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Trust Indicators */}
-              <div className="pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-xs font-bold text-slate-600">
+              <div className="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-xs font-bold text-slate-600">
                 <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" /> AI Assisted
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" /> {t('hero.trust1')}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-primary-500" /> Privacy Focused
+                  <CheckCircle2 className="w-4 h-4 text-primary-500" /> {t('hero.trust2')}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-secondary-500" /> Accessibility First
+                  <CheckCircle2 className="w-4 h-4 text-secondary-500" /> {t('hero.trust3')}
                 </span>
               </div>
             </div>
 
             {/* Right Hero Interactive Visual */}
             <div className="lg:col-span-5 relative">
-              
+
               {/* Main Visual Glass Card */}
               <div className="glass-card p-6 sm:p-8 rounded-3xl border border-white/80 shadow-2xl space-y-6 relative z-10 backdrop-blur-xl">
-                
+
                 {/* Visual Header */}
                 <div className="flex items-center justify-between pb-4 border-b border-slate-200/70">
                   <div className="flex items-center gap-3">
@@ -185,7 +245,7 @@ export const LandingPage: React.FC = () => {
                     <button
                       key={langCode}
                       onClick={() => setSelectedDemoLang(langCode)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
                         selectedDemoLang === langCode
                           ? 'bg-primary-600 text-white shadow-md shadow-primary-600/30'
                           : 'bg-white/80 text-slate-600 hover:bg-slate-100 border border-slate-200'
@@ -220,7 +280,7 @@ export const LandingPage: React.FC = () => {
                     <Activity className="w-3.5 h-3.5 text-secondary-500" /> Urgency: Moderate
                   </span>
                   <span className="flex items-center gap-1 text-primary-600">
-                    <Sparkles className="w-3.5 h-3.5" /> 94% Confidence
+                    <Sparkles className="w-3.5 h-3.5" /> 95% Confidence
                   </span>
                 </div>
               </div>
@@ -242,16 +302,16 @@ export const LandingPage: React.FC = () => {
       {/* Features Grid Section */}
       <section id="features" className="py-20 bg-white/70 backdrop-blur-md relative border-y border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
+
           <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
             <span className="px-3.5 py-1 rounded-full text-xs font-extrabold bg-primary-100 text-primary-700 uppercase tracking-wider">
               Intelligent Features
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-              Designed for Speed, Accuracy & Accessibility
+              {t('features.title')}
             </h2>
             <p className="text-slate-600 font-medium text-base">
-              Every feature of Sanjeevani AI is built to give you fast, trustworthy healthcare triage guidance in your native language.
+              {t('features.subtitle')}
             </p>
           </div>
 
@@ -311,7 +371,7 @@ export const LandingPage: React.FC = () => {
       <section className="py-20 bg-slate-900 text-white relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-center">
-            
+
             <div className="space-y-4">
               <span className="px-3.5 py-1 rounded-full text-xs font-extrabold bg-primary-500/20 text-primary-400 border border-primary-500/30 uppercase tracking-wider">
                 Built on Trust
@@ -325,7 +385,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-6">
-              
+
               <div className="p-6 bg-slate-800/80 rounded-2xl border border-slate-700 space-y-3">
                 <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
                   <ShieldCheck className="w-5 h-5" />
@@ -364,16 +424,16 @@ export const LandingPage: React.FC = () => {
       {/* FAQ Accordion Section */}
       <section id="faq" className="py-20 bg-slate-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          
+
           <div className="text-center space-y-4">
             <span className="px-3.5 py-1 rounded-full text-xs font-extrabold bg-secondary-100 text-secondary-700 uppercase tracking-wider">
               Got Questions?
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-              Frequently Asked Questions
+              {t('faq.title')}
             </h2>
             <p className="text-slate-600 font-medium text-base">
-              Learn how Sanjeevani AI processes health triage queries and protects user data.
+              {t('faq.subtitle')}
             </p>
           </div>
 
@@ -387,7 +447,7 @@ export const LandingPage: React.FC = () => {
                 >
                   <button
                     onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
-                    className="w-full p-6 text-left flex items-center justify-between gap-4 focus:outline-none"
+                    className="w-full p-6 text-left flex items-center justify-between gap-4 focus:outline-none cursor-pointer"
                   >
                     <span className="font-extrabold text-base text-slate-900">{item.question}</span>
                     {isOpen ? (

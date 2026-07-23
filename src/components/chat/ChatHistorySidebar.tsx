@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AssessmentSession } from '../../types/triage';
 import { Plus, MessageSquare, Search, Clock, Trash2, Shield, HeartPulse, ChevronLeft } from 'lucide-react';
 import { UrgencyBadge } from '../ui/UrgencyBadge';
+import { useI18n } from '../../i18n/I18nContext';
 
 interface ChatHistorySidebarProps {
   sessions: AssessmentSession[];
@@ -23,6 +24,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
   onCloseMobile,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const { t } = useI18n();
 
   const filteredSessions = sessions.filter(session =>
     session.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -42,13 +44,13 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-primary-600 to-secondary-500 flex items-center justify-center text-white shadow-sm">
               <HeartPulse className="w-4 h-4" />
             </div>
-            <span className="font-extrabold text-sm text-slate-800 tracking-tight">Triage History</span>
+            <span className="font-extrabold text-sm text-slate-800 tracking-tight">{t('chat.historyTitle')}</span>
           </div>
 
           {onCloseMobile && (
             <button
               onClick={onCloseMobile}
-              className="md:hidden p-1.5 rounded-lg text-slate-500 hover:bg-slate-100"
+              className="md:hidden p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 cursor-pointer"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
@@ -61,10 +63,10 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             onNewSession();
             if (onCloseMobile) onCloseMobile();
           }}
-          className="w-full gradient-button py-2.5 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-md shadow-primary-500/20"
+          className="w-full gradient-button py-2.5 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-md shadow-primary-500/20 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          <span>New Health Assessment</span>
+          <span>{t('chat.newSession')}</span>
         </button>
 
         {/* Search Bar */}
@@ -72,7 +74,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
           <input
             type="text"
-            placeholder="Search symptoms or sessions..."
+            placeholder={t('chat.searchHistory')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-white/80 border border-slate-200 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-700 placeholder-slate-400 focus:ring-2 focus:ring-primary-500 focus:outline-none"
@@ -83,13 +85,13 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
       {/* Sessions List */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         <p className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-          Recent Consultations ({filteredSessions.length})
+          Recent Sessions ({filteredSessions.length})
         </p>
 
         {filteredSessions.length === 0 ? (
           <div className="text-center py-8 px-4 text-slate-400 text-xs">
             <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p>No previous health assessments found.</p>
+            <p>{t('chat.noHistory')}</p>
           </div>
         ) : (
           filteredSessions.map((session) => {
@@ -101,7 +103,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                   onSelectSession(session.id);
                   if (onCloseMobile) onCloseMobile();
                 }}
-                className={`w-full text-left p-3 rounded-2xl transition-all border ${
+                className={`w-full text-left p-3 rounded-2xl transition-all border cursor-pointer ${
                   isActive
                     ? 'bg-white border-primary-300 shadow-md shadow-primary-500/10'
                     : 'bg-white/50 border-slate-200/60 hover:bg-white hover:border-slate-300'
@@ -135,10 +137,10 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
       <div className="p-3 border-t border-slate-200/80 bg-white/40 space-y-2">
         <button
           onClick={onClearAllHistory}
-          className="w-full text-xs font-semibold text-slate-500 hover:text-red-600 hover:bg-red-50 py-2 rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+          className="w-full text-xs font-semibold text-slate-500 hover:text-red-600 hover:bg-red-50 py-2 rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
         >
           <Trash2 className="w-3.5 h-3.5" />
-          <span>Clear History</span>
+          <span>{t('chat.clearSession')}</span>
         </button>
 
         <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-400 text-center font-medium">
