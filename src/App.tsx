@@ -1,0 +1,21 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { LandingPage } from './pages/LandingPage';
+import { AssessmentPage } from './pages/AssessmentPage';
+import { ReportPage } from './pages/ReportPage';
+import { AboutPage } from './pages/AboutPage';
+
+export const App: React.FC = () => {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/assessment" element={<AssessmentPage />} />
+        <Route path="/report" element={<ReportPage />} />
+        <Route path="/about" element={<AboutPage />} />
+      </Routes>
+    </Router>
+  );
+};
+
+export default App;

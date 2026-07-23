@@ -1,0 +1,409 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { ChatMessage, HealthSummary, TriageSession } from '../types/triage';
+import { SAMPLE_TRIAGE_SESSIONS, INITIAL_SAMPLE_CHIPS } from '../data/mockTriageFlows';
+import { processUserSymptom } from '../services/gemmaTriageEngine';
+import { speechService } from '../services/speechService';
+import { Navbar } from '../components/layout/Navbar';
+import { ChatBubble } from '../components/chat/ChatBubble';
+import { ChatHistorySidebar } from '../components/chat/ChatHistorySidebar';
+import { HealthSummarySidebar } from '../components/chat/HealthSummarySidebar';
+import { VoiceButton } from '../components/ui/VoiceButton';
+import { TypingIndicator } from '../components/ui/TypingIndicator';
+import { Toast, ToastMessage } from '../components/ui/Toast';
+import { Send, Sparkles, AlertOctagon, History, PanelRight, RotateCcw, Volume2, Globe } from 'lucide-react';
+import { SUPPORTED_LANGUAGES } from '../data/languages';
+
+export const AssessmentPage: React.FC = () => {
+  const [sessions, setSessions] = useState<TriageSession[]>(SAMPLE_TRIAGE_SESSIONS);
+  const [activeSessionId, setActiveSessionId] = useState<string>(SAMPLE_TRIAGE_SESSIONS[0].id);
+  const [inputText, setInputText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [currentLang, setCurrentLang] = useState('en');
+  const [toast, setToast] = useState<ToastMessage | null>(null);
+
+  // Mobile Drawer toggles
+  const [leftSidebarOpen, setLeftSidebarOpen] = useState(false);
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
+
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // Active Session reference
+  const activeSession = sessions.find(s => s.id === activeSessionId) || sessions[0];
+
+  // Auto-scroll to bottom of chat
+  const scrollToBottom = () => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [activeSession?.messages, isTyping]);
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setToast({ id: `t-${Date.now()}`, message, type });
+  };
+
+  // Handle New Session
+  const handleNewSession = () => {
+    const newSession: TriageSession = {
+      id: `session-${Date.now()}`,
+      title: "New Health Assessment",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      languageCode: currentLang,
+      messages: [
+        {
+          id: `msg-welcome`,
+          sender: 'gemma',
+          text: currentLang === 'hi' 
+            ? "नमस्ते! मैं संजीवनी AI (Google Gemma द्वारा संचालित) हूँ। आज मैं आपकी कैसे सहायता कर सकता हूँ? कृपया अपने लक्षणों का वर्णन करें।"
+            : "Hello! I am Sanjeevani AI powered by Google Gemma. How can I assist with your symptoms today? Please describe how you are feeling in your language.",
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          thoughtProcess: ["Model Initialized: Google Gemma 2.0 Triage Core", "Awaiting patient symptom description"]
+        }
+      ],
+      summary: {
+        symptoms: [],
+        duration: "",
+        urgency: "low",
+        recommendation: "Describe your symptoms to receive AI triage guidance.",
+        emergencyStatus: false,
+        confidence: 85,
+        suggestedDepartment: "General Physician",
+        followUpQuestionsAsked: 0
+      }
+    };
+
+    setSessions([newSession, ...sessions]);
+    setActiveSessionId(newSession.id);
+    showToast("Started new health assessment session.", "success");
+  };
+
+  // Handle Sending Message
+  const handleSendMessage = (textToSend?: string, isVoice: boolean = false) => {
+    const text = textToSend || inputText;
+    if (!text.trim()) return;
+
+    const userTimestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const userMessage: ChatMessage = {
+      id: `msg-${Date.now()}`,
+      sender: 'user',
+      text: text.trim(),
+      timestamp: userTimestamp,
+      isVoiceInput: isVoice
+    };
+
+    // Update active session with user message
+    const updatedMessages = [...activeSession.messages, userMessage];
+    
+    // Update title if initial turn
+    const newTitle = activeSession.messages.length <= 1 
+      ? (text.length > 25 ? text.substring(0, 25) + '...' : text)
+      : activeSession.title;
+
+    setSessions(prev => prev.map(s => {
+      if (s.id === activeSessionId) {
+        return {
+          ...s,
+          title: newTitle,
+          updatedAt: new Date().toISOString(),
+          messages: updatedMessages
+        };
+      }
+      return s;
+    }));
+
+    setInputText('');
+    setIsTyping(true);
+
+    // Simulate Google Gemma AI Processing Latency
+    setTimeout(() => {
+      const gemmaResult = processUserSymptom(
+        text,
+        updatedMessages,
+        activeSession.summary,
+        currentLang,
+        isVoice
+      );
+
+      setSessions(prev => prev.map(s => {
+        if (s.id === activeSessionId) {
+          return {
+            ...s,
+            updatedAt: new Date().toISOString(),
+            messages: [...updatedMessages, gemmaResult.message],
+            summary: gemmaResult.updatedSummary
+          };
+        }
+        return s;
+      }));
+
+      setIsTyping(false);
+
+      if (gemmaResult.updatedSummary.emergencyStatus) {
+        showToast("⚠️ Emergency symptoms detected! Seek immediate hospital care.", "error");
+      }
+    }, 1500);
+  };
+
+  // Handle Voice Input Toggle
+  const handleToggleVoice = () => {
+    if (isListening) {
+      speechService.stopListening();
+      setIsListening(false);
+      showToast("Voice recording stopped.");
+    } else {
+      const success = speechService.startListening(
+        currentLang,
+        (result) => {
+          setInputText(result.transcript);
+          if (result.isFinal) {
+            setIsListening(false);
+            handleSendMessage(result.transcript, true);
+          }
+        },
+        (error) => {
+          setIsListening(false);
+          // Fallback simulation if speech recognition is denied or unavailable
+          const fallbackSample = currentLang === 'hi' 
+            ? "मुझे 2 दिनों से तेज़ बुखार और सिरदर्द है" 
+            : "I have had a fever and bad headache for two days.";
+          setInputText(fallbackSample);
+          showToast(`Voice simulated: "${fallbackSample}"`, "info");
+        },
+        () => setIsListening(false)
+      );
+
+      if (success) {
+        setIsListening(true);
+        showToast("Listening... Speak your symptoms clearly into your microphone.", "info");
+      }
+    }
+  };
+
+  const handleClearCurrentSession = () => {
+    setSessions(prev => prev.map(s => {
+      if (s.id === activeSessionId) {
+        return {
+          ...s,
+          messages: [
+            {
+              id: `msg-reset`,
+              sender: 'gemma',
+              text: "Session cleared. What symptoms would you like to assess?",
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            }
+          ],
+          summary: {
+            symptoms: [],
+            duration: "",
+            urgency: "low",
+            recommendation: "Describe your symptoms to receive AI triage guidance.",
+            emergencyStatus: false,
+            confidence: 85,
+            suggestedDepartment: "General Physician",
+            followUpQuestionsAsked: 0
+          }
+        };
+      }
+      return s;
+    }));
+    showToast("Current session cleared.", "info");
+  };
+
+  const handleClearAllHistory = () => {
+    handleNewSession();
+    showToast("History cleared.");
+  };
+
+  return (
+    <div className="h-screen flex flex-col bg-slate-50 overflow-hidden">
+      {/* Toast Notification Container */}
+      <Toast toast={toast} onClose={() => setToast(null)} />
+
+      {/* Main Navbar */}
+      <Navbar currentLang={currentLang} onSelectLang={setCurrentLang} />
+
+      {/* Main Body - 3 Column Layout */}
+      <div className="flex-1 flex overflow-hidden relative">
+        
+        {/* LEFT COLUMN: History Sidebar */}
+        <ChatHistorySidebar
+          sessions={sessions}
+          activeSessionId={activeSessionId}
+          onSelectSession={setActiveSessionId}
+          onNewSession={handleNewSession}
+          onClearAllHistory={handleClearAllHistory}
+          isOpen={leftSidebarOpen}
+          onCloseMobile={() => setLeftSidebarOpen(false)}
+        />
+
+        {/* CENTER COLUMN: Chat Interface */}
+        <main className="flex-1 flex flex-col bg-slate-50/50 relative overflow-hidden">
+          
+          {/* Top Bar for Chat Mobile & Controls */}
+          <div className="px-4 py-3 bg-white/80 border-b border-slate-200/80 flex items-center justify-between shadow-sm z-10 backdrop-blur-md">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setLeftSidebarOpen(!leftSidebarOpen)}
+                className="md:hidden p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200"
+                title="Toggle History"
+              >
+                <History className="w-5 h-5" />
+              </button>
+
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center font-bold">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="font-extrabold text-xs text-slate-800 line-clamp-1">
+                    {activeSession.title}
+                  </h2>
+                  <p className="text-[10px] text-slate-400 font-medium">Google Gemma Clinical Triage</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Quick Language Selector Pill */}
+              <div className="hidden sm:flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                <Globe className="w-3.5 h-3.5 text-primary-600 ml-1.5" />
+                <select
+                  value={currentLang}
+                  onChange={(e) => setCurrentLang(e.target.value)}
+                  className="bg-transparent text-slate-700 text-xs font-semibold focus:outline-none cursor-pointer pr-2"
+                >
+                  {SUPPORTED_LANGUAGES.map(lang => (
+                    <option key={lang.code} value={lang.code}>
+                      {lang.flag} {lang.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                onClick={handleClearCurrentSession}
+                className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+                title="Reset conversation"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={() => setRightSidebarOpen(!rightSidebarOpen)}
+                className="lg:hidden p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200"
+                title="Toggle Summary"
+              >
+                <PanelRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Emergency Alert Banner Overlay if active */}
+          {activeSession.summary.emergencyStatus && (
+            <div className="bg-red-600 text-white px-4 py-2.5 flex items-center justify-between shadow-md text-xs font-bold animate-pulse">
+              <div className="flex items-center gap-2">
+                <AlertOctagon className="w-5 h-5 shrink-0 text-white" />
+                <span>EMERGENCY PROTOCOL ENGAGED: High-risk medical markers detected. Call emergency services (911 / 108) immediately.</span>
+              </div>
+            </div>
+          )}
+
+          {/* Chat Messages Container */}
+          <div
+            ref={chatContainerRef}
+            className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 max-w-4xl w-full mx-auto"
+          >
+            {activeSession.messages.map((message) => (
+              <ChatBubble key={message.id} message={message} languageCode={currentLang} />
+            ))}
+
+            {isTyping && <TypingIndicator />}
+          </div>
+
+          {/* Smart Suggestion Chips */}
+          <div className="px-4 py-2 max-w-4xl w-full mx-auto">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+              <span className="text-[11px] font-bold text-slate-400 shrink-0">Quick Symptoms:</span>
+              {INITIAL_SAMPLE_CHIPS.map((chip, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleSendMessage(chip)}
+                  className="px-3 py-1 rounded-full text-xs font-medium bg-white text-slate-700 hover:bg-primary-50 hover:text-primary-600 border border-slate-200 shadow-sm shrink-0 transition-colors"
+                >
+                  + {chip}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Input Bar Section */}
+          <div className="p-4 bg-white/90 border-t border-slate-200 shadow-lg backdrop-blur-lg">
+            <div className="max-w-4xl mx-auto flex items-center gap-3">
+              
+              {/* Voice Button */}
+              <VoiceButton
+                isListening={isListening}
+                onToggle={handleToggleVoice}
+                size="md"
+              />
+
+              {/* Text Field */}
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  placeholder={
+                    isListening
+                      ? "Listening to voice input..."
+                      : currentLang === 'hi' 
+                        ? "अपने लक्षण लिखें (उदा: मुझे 2 दिनों से बुखार है)..."
+                        : "Describe your symptoms (e.g., I have had a high fever for two days)..."
+                  }
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                  className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-4 py-3.5 text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all shadow-inner"
+                />
+              </div>
+
+              {/* Send Button */}
+              <button
+                onClick={() => handleSendMessage()}
+                disabled={!inputText.trim()}
+                className="gradient-button p-3.5 rounded-2xl shadow-md shadow-primary-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                title="Send Message"
+              >
+                <Send className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-[10px] text-center text-slate-400 font-medium mt-2">
+              Sanjeevani AI provides triage assessment guidance only. Not a medical diagnosis.
+            </p>
+          </div>
+
+        </main>
+
+        {/* RIGHT COLUMN: Live Health Summary Sidebar */}
+        <aside
+          className={`fixed inset-y-0 right-0 z-40 w-80 lg:w-88 bg-slate-50/90 backdrop-blur-xl border-l border-slate-200 p-4 overflow-y-auto transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
+            rightSidebarOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
+          <HealthSummarySidebar
+            summary={activeSession.summary}
+            onClearSession={handleClearCurrentSession}
+          />
+        </aside>
+
+      </div>
+    </div>
+  );
+};
