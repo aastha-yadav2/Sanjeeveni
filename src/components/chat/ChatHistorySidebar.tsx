@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { TriageSession } from '../../types/triage';
+import { AssessmentSession } from '../../types/triage';
 import { Plus, MessageSquare, Search, Clock, Trash2, Shield, HeartPulse, ChevronLeft } from 'lucide-react';
 import { UrgencyBadge } from '../ui/UrgencyBadge';
 
 interface ChatHistorySidebarProps {
-  sessions: TriageSession[];
+  sessions: AssessmentSession[];
   activeSessionId: string;
   onSelectSession: (id: string) => void;
   onNewSession: () => void;
@@ -143,7 +143,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
 
         <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-400 text-center font-medium">
           <Shield className="w-3 h-3 text-emerald-500" />
-          <span>Encrypted Local Storage</span>
+          <span>Encrypted Session State</span>
         </div>
       </div>
     </aside>

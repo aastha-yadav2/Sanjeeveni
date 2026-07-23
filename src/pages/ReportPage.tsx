@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SAMPLE_TRIAGE_SESSIONS } from '../data/mockTriageFlows';
+import { SAMPLE_TRIAGE_SESSIONS } from '../data/mockData';
 import { PrintableReport } from '../components/report/PrintableReport';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';

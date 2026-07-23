@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChatMessage, HealthSummary, TriageSession } from '../types/triage';
-import { SAMPLE_TRIAGE_SESSIONS, INITIAL_SAMPLE_CHIPS } from '../data/mockTriageFlows';
-import { processUserSymptom } from '../services/gemmaTriageEngine';
+import { ChatMessage, AssessmentSession } from '../types/triage';
+import { SAMPLE_TRIAGE_SESSIONS, INITIAL_SAMPLE_CHIPS } from '../data/mockData';
+import { api } from '../services/api';
 import { speechService } from '../services/speechService';
 import { Navbar } from '../components/layout/Navbar';
 import { ChatBubble } from '../components/chat/ChatBubble';
@@ -10,11 +10,11 @@ import { HealthSummarySidebar } from '../components/chat/HealthSummarySidebar';
 import { VoiceButton } from '../components/ui/VoiceButton';
 import { TypingIndicator } from '../components/ui/TypingIndicator';
 import { Toast, ToastMessage } from '../components/ui/Toast';
-import { Send, Sparkles, AlertOctagon, History, PanelRight, RotateCcw, Volume2, Globe } from 'lucide-react';
+import { Send, Sparkles, AlertOctagon, History, PanelRight, RotateCcw, Globe } from 'lucide-react';
 import { SUPPORTED_LANGUAGES } from '../data/languages';
 
 export const AssessmentPage: React.FC = () => {
-  const [sessions, setSessions] = useState<TriageSession[]>(SAMPLE_TRIAGE_SESSIONS);
+  const [sessions, setSessions] = useState<AssessmentSession[]>(SAMPLE_TRIAGE_SESSIONS);
   const [activeSessionId, setActiveSessionId] = useState<string>(SAMPLE_TRIAGE_SESSIONS[0].id);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -22,16 +22,15 @@ export const AssessmentPage: React.FC = () => {
   const [currentLang, setCurrentLang] = useState('en');
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
-  // Mobile Drawer toggles
+  // Mobile Drawer Toggles
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(false);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // Active Session reference
+  // Active Session Reference
   const activeSession = sessions.find(s => s.id === activeSessionId) || sessions[0];
 
-  // Auto-scroll to bottom of chat
   const scrollToBottom = () => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTo({
@@ -49,44 +48,41 @@ export const AssessmentPage: React.FC = () => {
     setToast({ id: `t-${Date.now()}`, message, type });
   };
 
-  // Handle New Session
-  const handleNewSession = () => {
-    const newSession: TriageSession = {
-      id: `session-${Date.now()}`,
-      title: "New Health Assessment",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      languageCode: currentLang,
-      messages: [
-        {
-          id: `msg-welcome`,
-          sender: 'gemma',
-          text: currentLang === 'hi' 
-            ? "नमस्ते! मैं संजीवनी AI (Google Gemma द्वारा संचालित) हूँ। आज मैं आपकी कैसे सहायता कर सकता हूँ? कृपया अपने लक्षणों का वर्णन करें।"
-            : "Hello! I am Sanjeevani AI powered by Google Gemma. How can I assist with your symptoms today? Please describe how you are feeling in your language.",
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          thoughtProcess: ["Model Initialized: Google Gemma 2.0 Triage Core", "Awaiting patient symptom description"]
-        }
-      ],
-      summary: {
-        symptoms: [],
-        duration: "",
-        urgency: "low",
-        recommendation: "Describe your symptoms to receive AI triage guidance.",
-        emergencyStatus: false,
-        confidence: 85,
-        suggestedDepartment: "General Physician",
-        followUpQuestionsAsked: 0
-      }
-    };
+  // 1. Start New Session via API Service
+  const handleNewSession = async () => {
+    setIsTyping(true);
+    try {
+      const initResponse = await api.startAssessment(currentLang);
+      const newSession: AssessmentSession = {
+        id: `session-${Date.now()}`,
+        title: "New Health Assessment",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        languageCode: currentLang,
+        messages: [
+          {
+            id: `msg-${Date.now()}`,
+            sender: 'gemma',
+            text: initResponse.assistantMessage,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            thoughtProcess: initResponse.thoughtProcess
+          }
+        ],
+        summary: initResponse.healthSummary
+      };
 
-    setSessions([newSession, ...sessions]);
-    setActiveSessionId(newSession.id);
-    showToast("Started new health assessment session.", "success");
+      setSessions(prev => [newSession, ...prev]);
+      setActiveSessionId(newSession.id);
+      showToast("Started new health assessment session.", "success");
+    } catch (err) {
+      showToast("Failed to initialize assessment session", "error");
+    } finally {
+      setIsTyping(false);
+    }
   };
 
-  // Handle Sending Message
-  const handleSendMessage = (textToSend?: string, isVoice: boolean = false) => {
+  // 2. Send Message via API Service
+  const handleSendMessage = async (textToSend?: string, isVoice: boolean = false) => {
     const text = textToSend || inputText;
     if (!text.trim()) return;
 
@@ -99,10 +95,7 @@ export const AssessmentPage: React.FC = () => {
       isVoiceInput: isVoice
     };
 
-    // Update active session with user message
     const updatedMessages = [...activeSession.messages, userMessage];
-    
-    // Update title if initial turn
     const newTitle = activeSession.messages.length <= 1 
       ? (text.length > 25 ? text.substring(0, 25) + '...' : text)
       : activeSession.title;
@@ -122,42 +115,52 @@ export const AssessmentPage: React.FC = () => {
     setInputText('');
     setIsTyping(true);
 
-    // Simulate Google Gemma AI Processing Latency
-    setTimeout(() => {
-      const gemmaResult = processUserSymptom(
+    try {
+      // Call Centralized API Service (Decoupled Backend Call)
+      const apiResponse = await api.sendMessage(
+        activeSession.id,
         text,
-        updatedMessages,
-        activeSession.summary,
         currentLang,
-        isVoice
+        activeSession.summary
       );
+
+      const gemmaMessage: ChatMessage = {
+        id: `msg-${Date.now()}`,
+        sender: 'gemma',
+        text: apiResponse.assistantMessage,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        urgencyLevel: apiResponse.healthSummary.urgency,
+        thoughtProcess: apiResponse.thoughtProcess
+      };
 
       setSessions(prev => prev.map(s => {
         if (s.id === activeSessionId) {
           return {
             ...s,
             updatedAt: new Date().toISOString(),
-            messages: [...updatedMessages, gemmaResult.message],
-            summary: gemmaResult.updatedSummary
+            messages: [...updatedMessages, gemmaMessage],
+            summary: apiResponse.healthSummary
           };
         }
         return s;
       }));
 
-      setIsTyping(false);
-
-      if (gemmaResult.updatedSummary.emergencyStatus) {
-        showToast("⚠️ Emergency symptoms detected! Seek immediate hospital care.", "error");
+      if (apiResponse.healthSummary.emergency) {
+        showToast("⚠️ Emergency symptoms detected! Call emergency services immediately.", "error");
       }
-    }, 1500);
+    } catch (err) {
+      showToast("Error communicating with triage API", "error");
+    } finally {
+      setIsTyping(false);
+    }
   };
 
-  // Handle Voice Input Toggle
+  // 3. Web Speech API Integration (Populates text input box)
   const handleToggleVoice = () => {
     if (isListening) {
       speechService.stopListening();
       setIsListening(false);
-      showToast("Voice recording stopped.");
+      showToast("Voice input stopped.");
     } else {
       const success = speechService.startListening(
         currentLang,
@@ -170,67 +173,32 @@ export const AssessmentPage: React.FC = () => {
         },
         (error) => {
           setIsListening(false);
-          // Fallback simulation if speech recognition is denied or unavailable
-          const fallbackSample = currentLang === 'hi' 
-            ? "मुझे 2 दिनों से तेज़ बुखार और सिरदर्द है" 
-            : "I have had a fever and bad headache for two days.";
-          setInputText(fallbackSample);
-          showToast(`Voice simulated: "${fallbackSample}"`, "info");
+          const sample = currentLang === 'hi'
+            ? "मुझे 2 दिनों से तेज़ बुखार है"
+            : "I have had a high fever for two days.";
+          setInputText(sample);
+          showToast(`Voice simulated: "${sample}"`, "info");
         },
         () => setIsListening(false)
       );
 
       if (success) {
         setIsListening(true);
-        showToast("Listening... Speak your symptoms clearly into your microphone.", "info");
+        showToast("Listening... Speak your symptoms into your microphone.", "info");
       }
     }
   };
 
-  const handleClearCurrentSession = () => {
-    setSessions(prev => prev.map(s => {
-      if (s.id === activeSessionId) {
-        return {
-          ...s,
-          messages: [
-            {
-              id: `msg-reset`,
-              sender: 'gemma',
-              text: "Session cleared. What symptoms would you like to assess?",
-              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            }
-          ],
-          summary: {
-            symptoms: [],
-            duration: "",
-            urgency: "low",
-            recommendation: "Describe your symptoms to receive AI triage guidance.",
-            emergencyStatus: false,
-            confidence: 85,
-            suggestedDepartment: "General Physician",
-            followUpQuestionsAsked: 0
-          }
-        };
-      }
-      return s;
-    }));
-    showToast("Current session cleared.", "info");
-  };
-
-  const handleClearAllHistory = () => {
+  const handleClearCurrentSession = async () => {
+    await api.clearSession(activeSession.id);
     handleNewSession();
-    showToast("History cleared.");
   };
 
   return (
     <div className="h-screen flex flex-col bg-slate-50 overflow-hidden">
-      {/* Toast Notification Container */}
       <Toast toast={toast} onClose={() => setToast(null)} />
-
-      {/* Main Navbar */}
       <Navbar currentLang={currentLang} onSelectLang={setCurrentLang} />
 
-      {/* Main Body - 3 Column Layout */}
       <div className="flex-1 flex overflow-hidden relative">
         
         {/* LEFT COLUMN: History Sidebar */}
@@ -239,7 +207,7 @@ export const AssessmentPage: React.FC = () => {
           activeSessionId={activeSessionId}
           onSelectSession={setActiveSessionId}
           onNewSession={handleNewSession}
-          onClearAllHistory={handleClearAllHistory}
+          onClearAllHistory={() => setSessions([])}
           isOpen={leftSidebarOpen}
           onCloseMobile={() => setLeftSidebarOpen(false)}
         />
@@ -266,13 +234,12 @@ export const AssessmentPage: React.FC = () => {
                   <h2 className="font-extrabold text-xs text-slate-800 line-clamp-1">
                     {activeSession.title}
                   </h2>
-                  <p className="text-[10px] text-slate-400 font-medium">Google Gemma Clinical Triage</p>
+                  <p className="text-[10px] text-slate-400 font-medium">FastAPI + Gemma Backend Stream</p>
                 </div>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Quick Language Selector Pill */}
               <div className="hidden sm:flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
                 <Globe className="w-3.5 h-3.5 text-primary-600 ml-1.5" />
                 <select
@@ -291,7 +258,7 @@ export const AssessmentPage: React.FC = () => {
               <button
                 onClick={handleClearCurrentSession}
                 className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100"
-                title="Reset conversation"
+                title="Reset session"
               >
                 <RotateCcw className="w-4 h-4" />
               </button>
@@ -306,12 +273,12 @@ export const AssessmentPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Emergency Alert Banner Overlay if active */}
-          {activeSession.summary.emergencyStatus && (
+          {/* Emergency Alert Banner Overlay */}
+          {activeSession.summary.emergency && (
             <div className="bg-red-600 text-white px-4 py-2.5 flex items-center justify-between shadow-md text-xs font-bold animate-pulse">
               <div className="flex items-center gap-2">
                 <AlertOctagon className="w-5 h-5 shrink-0 text-white" />
-                <span>EMERGENCY PROTOCOL ENGAGED: High-risk medical markers detected. Call emergency services (911 / 108) immediately.</span>
+                <span>EMERGENCY PROTOCOL: High-risk medical markers detected. Contact emergency services (911 / 108) immediately.</span>
               </div>
             </div>
           )}
@@ -325,7 +292,7 @@ export const AssessmentPage: React.FC = () => {
               <ChatBubble key={message.id} message={message} languageCode={currentLang} />
             ))}
 
-            {isTyping && <TypingIndicator />}
+            {isTyping && <TypingIndicator statusText="FastAPI Backend calling Google Gemma LLM..." />}
           </div>
 
           {/* Smart Suggestion Chips */}
@@ -348,14 +315,12 @@ export const AssessmentPage: React.FC = () => {
           <div className="p-4 bg-white/90 border-t border-slate-200 shadow-lg backdrop-blur-lg">
             <div className="max-w-4xl mx-auto flex items-center gap-3">
               
-              {/* Voice Button */}
               <VoiceButton
                 isListening={isListening}
                 onToggle={handleToggleVoice}
                 size="md"
               />
 
-              {/* Text Field */}
               <div className="flex-1 relative">
                 <input
                   type="text"
@@ -363,7 +328,7 @@ export const AssessmentPage: React.FC = () => {
                     isListening
                       ? "Listening to voice input..."
                       : currentLang === 'hi' 
-                        ? "अपने लक्षण लिखें (उदा: मुझे 2 दिनों से बुखार है)..."
+                        ? "अपने लक्षण लिखें (उदा: मुझे 2 दिनों से तेज़ बुखार है)..."
                         : "Describe your symptoms (e.g., I have had a high fever for two days)..."
                   }
                   value={inputText}
@@ -373,7 +338,6 @@ export const AssessmentPage: React.FC = () => {
                 />
               </div>
 
-              {/* Send Button */}
               <button
                 onClick={() => handleSendMessage()}
                 disabled={!inputText.trim()}

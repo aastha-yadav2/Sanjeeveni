@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { TriageSession } from '../../types/triage';
+import { AssessmentSession } from '../../types/triage';
 import { UrgencyBadge } from '../ui/UrgencyBadge';
 import { HeartPulse, Download, Printer, ArrowLeft, ShieldCheck, Calendar, User, Clock, FileCheck2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -8,7 +8,7 @@ import jsPDF from 'jspdf';
 import confetti from 'canvas-confetti';
 
 interface PrintableReportProps {
-  session: TriageSession;
+  session: AssessmentSession;
   onToast?: (message: string) => void;
 }
 
@@ -40,7 +40,6 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ session, onToa
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`Sanjeevani_Health_Report_${session.id}.pdf`);
 
-      // Fire celebratory confetti effect
       confetti({
         particleCount: 80,
         spread: 60,
@@ -50,7 +49,6 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ session, onToa
       if (onToast) onToast("PDF Report successfully downloaded!");
     } catch (err) {
       console.error("Failed to generate PDF", err);
-      // Fallback to window print
       window.print();
     }
   };
@@ -91,7 +89,6 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ session, onToa
         ref={reportRef}
         className="bg-white p-8 sm:p-12 rounded-3xl border border-slate-200 shadow-2xl space-y-8 text-slate-800 relative overflow-hidden"
       >
-        {/* Decorative Top Accent */}
         <div className="h-3 bg-gradient-to-r from-primary-600 via-secondary-500 to-primary-600 -mx-8 -mt-8 sm:-mx-12 sm:-mt-12 mb-8"></div>
 
         {/* Header Section */}
@@ -104,7 +101,7 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ session, onToa
               <h1 className="text-2xl font-black text-slate-900 tracking-tight">
                 Sanjeevani <span className="text-primary-600">AI</span>
               </h1>
-              <p className="text-xs font-semibold text-slate-500">Google Gemma Multilingual Triage Summary</p>
+              <p className="text-xs font-semibold text-slate-500">FastAPI + Google Gemma Triage Summary</p>
               <div className="flex items-center gap-1.5 mt-1 text-[11px] font-bold text-emerald-600">
                 <FileCheck2 className="w-3.5 h-3.5" /> Verified Triage Record
               </div>
@@ -124,7 +121,7 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ session, onToa
           </div>
         </div>
 
-        {/* Patient & Triage Overview Header Box */}
+        {/* Patient Overview Box */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-200">
           <div>
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
@@ -147,7 +144,7 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ session, onToa
 
           <div>
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-              Gemma Confidence Index
+              Gemma Confidence Score
             </span>
             <p className="text-sm font-extrabold text-primary-600">
               {session.summary.confidence}% Clinical Match
@@ -178,8 +175,6 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ session, onToa
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
               <span className="text-xs font-semibold text-slate-500 block mb-1">Reported Duration:</span>
               <p className="text-base font-extrabold text-slate-800">{session.summary.duration || '2 days'}</p>
-              <span className="text-xs font-semibold text-slate-500 block mt-3 mb-1">Suggested Department:</span>
-              <p className="text-sm font-bold text-secondary-600">{session.summary.suggestedDepartment}</p>
             </div>
           </div>
         </div>
@@ -213,7 +208,7 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ session, onToa
               >
                 <div className="flex items-center justify-between font-bold">
                   <span className={msg.sender === 'gemma' ? 'text-primary-600' : 'text-slate-800'}>
-                    {msg.sender === 'gemma' ? 'Google Gemma AI' : 'Patient Answer'}
+                    {msg.sender === 'gemma' ? 'Google Gemma AI (Backend)' : 'Patient Answer'}
                   </span>
                   <span className="text-slate-400 font-normal">{msg.timestamp}</span>
                 </div>
@@ -223,14 +218,14 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ session, onToa
           </div>
         </div>
 
-        {/* Medical Disclaimer Banner */}
+        {/* Disclaimer Banner */}
         <div className="p-5 bg-slate-900 text-slate-300 rounded-2xl space-y-2 border border-slate-800 text-xs">
           <div className="flex items-center gap-2 text-amber-400 font-bold uppercase tracking-wider">
             <ShieldCheck className="w-4 h-4" />
             <span>Healthcare Notice & Disclaimer</span>
           </div>
           <p className="leading-relaxed">
-            This document is generated by Sanjeevani AI (powered by Google Gemma) as an initial symptom triage summary. It does <strong>NOT</strong> constitute a formal diagnosis, medical treatment, or prescription. Please present this summary to a licensed physician or emergency medical clinician for formal diagnosis and care.
+            This report is generated by Sanjeevani AI (Google Gemma Backend integration). It does <strong>NOT</strong> constitute a formal diagnosis, medical treatment, or prescription. Please present this summary to a licensed physician or emergency medical clinician.
           </p>
         </div>
       </div>

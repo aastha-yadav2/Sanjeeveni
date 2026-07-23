@@ -3,7 +3,7 @@ import { UrgencyLevel } from '../../types/triage';
 import { CheckCircle2, AlertCircle, AlertTriangle, Flame } from 'lucide-react';
 
 interface UrgencyBadgeProps {
-  level: UrgencyLevel;
+  level: UrgencyLevel | string;
   size?: 'sm' | 'md' | 'lg';
   showLabel?: boolean;
 }
@@ -13,34 +13,32 @@ export const UrgencyBadge: React.FC<UrgencyBadgeProps> = ({
   size = 'md',
   showLabel = true,
 }) => {
-  const config = {
+  const normalizedLevel = (level || 'Low').toLowerCase();
+
+  const config: Record<string, { label: string; bg: string; icon: any }> = {
     low: {
       label: 'Low Urgency',
       bg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
       icon: CheckCircle2,
-      dotBg: 'bg-emerald-500',
     },
     moderate: {
       label: 'Moderate Urgency',
       bg: 'bg-blue-50 text-blue-700 border-blue-200',
       icon: AlertCircle,
-      dotBg: 'bg-blue-500',
     },
     high: {
       label: 'High Urgency',
       bg: 'bg-amber-50 text-amber-700 border-amber-300',
       icon: AlertTriangle,
-      dotBg: 'bg-amber-500',
     },
     emergency: {
       label: 'EMERGENCY',
-      bg: 'bg-red-600 text-white border-red-700 animate-pulse',
+      bg: 'bg-red-600 text-white border-red-700 animate-pulse font-extrabold',
       icon: Flame,
-      dotBg: 'bg-white',
     },
   };
 
-  const current = config[level] || config.low;
+  const current = config[normalizedLevel] || config.low;
   const Icon = current.icon;
 
   const sizeClasses = {

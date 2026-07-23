@@ -1,4 +1,4 @@
-export type UrgencyLevel = 'low' | 'moderate' | 'high' | 'emergency';
+export type UrgencyLevel = 'Low' | 'Moderate' | 'High' | 'Emergency';
 
 export interface Language {
   code: string;
@@ -15,7 +15,7 @@ export interface ChatMessage {
   languageCode?: string;
   urgencyLevel?: UrgencyLevel;
   isVoiceInput?: boolean;
-  thoughtProcess?: string[]; // Gemma AI reasoning steps
+  thoughtProcess?: string[];
 }
 
 export interface HealthSummary {
@@ -23,13 +23,18 @@ export interface HealthSummary {
   duration: string;
   urgency: UrgencyLevel;
   recommendation: string;
-  emergencyStatus: boolean;
-  confidence: number; // Percentage (e.g., 94%)
-  suggestedDepartment: string;
-  followUpQuestionsAsked: number;
+  confidence: number; // e.g. 94.5
+  emergency: boolean; // Emergency red flag indicator
 }
 
-export interface TriageSession {
+export interface ApiResponse {
+  assistantMessage: string;
+  healthSummary: HealthSummary;
+  followUpQuestions: string[];
+  thoughtProcess?: string[];
+}
+
+export interface AssessmentSession {
   id: string;
   title: string;
   createdAt: string;
@@ -39,4 +44,18 @@ export interface TriageSession {
   summary: HealthSummary;
   patientAge?: string;
   patientGender?: string;
+}
+
+export interface Report {
+  session: AssessmentSession;
+  generatedAt: string;
+  physicianNotes?: string;
+}
+
+export interface ConversationState {
+  activeSessionId: string;
+  sessions: AssessmentSession[];
+  isLoading: boolean;
+  error: string | null;
+  languageCode: string;
 }

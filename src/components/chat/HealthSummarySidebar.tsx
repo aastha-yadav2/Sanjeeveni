@@ -31,7 +31,7 @@ export const HealthSummarySidebar: React.FC<HealthSummarySidebarProps> = ({
             </div>
             <div>
               <h3 className="font-extrabold text-sm text-slate-800 tracking-tight">Live Health Summary</h3>
-              <p className="text-[10px] text-slate-400 font-medium">Real-time Gemma AI Extraction</p>
+              <p className="text-[10px] text-slate-400 font-medium">FastAPI + Gemma Backend Data</p>
             </div>
           </div>
           
@@ -40,15 +40,15 @@ export const HealthSummarySidebar: React.FC<HealthSummarySidebarProps> = ({
           </span>
         </div>
 
-        {/* Emergency Alert Banner if Emergency Status is true */}
-        {summary.emergencyStatus && (
+        {/* Emergency Alert Banner if summary.emergency is true */}
+        {summary.emergency && (
           <div className="p-3.5 bg-red-600 text-white rounded-2xl shadow-lg shadow-red-600/30 animate-pulse space-y-1.5">
             <div className="flex items-center gap-2 font-black text-xs uppercase tracking-wider">
               <AlertOctagon className="w-5 h-5 shrink-0" />
               <span>EMERGENCY ALERT</span>
             </div>
             <p className="text-xs text-red-100 leading-snug font-medium">
-              Immediate medical evaluation required. Call 911 or emergency services now.
+              Immediate medical evaluation required. Call 911 / 108 emergency services now.
             </p>
           </div>
         )}
@@ -92,28 +92,20 @@ export const HealthSummarySidebar: React.FC<HealthSummarySidebarProps> = ({
           <span className="font-bold text-slate-800">{summary.duration || 'Not specified'}</span>
         </div>
 
-        {/* Suggested Department */}
-        <div className="flex items-center justify-between p-3 bg-slate-50/80 rounded-xl border border-slate-200/60 text-xs">
-          <span className="text-slate-500 font-medium flex items-center gap-1.5">
-            <Stethoscope className="w-4 h-4 text-secondary-500" /> Care Pathway
-          </span>
-          <span className="font-bold text-slate-800">{summary.suggestedDepartment}</span>
-        </div>
-
         {/* Gemma Recommendation Box */}
         <div className="p-3.5 bg-gradient-to-r from-primary-50 to-secondary-50 rounded-2xl border border-primary-100 space-y-1">
           <span className="text-[10px] font-bold text-primary-700 uppercase tracking-wider block">
             Recommended Action
           </span>
           <p className="text-xs text-slate-700 font-medium leading-relaxed">
-            {summary.recommendation}
+            {summary.recommendation || 'Provide symptoms to view care recommendation.'}
           </p>
         </div>
 
         {/* AI Confidence Meter */}
         <div className="space-y-1">
           <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
-            <span>AI Confidence Score</span>
+            <span>Gemma Confidence Score</span>
             <span className="text-primary-600 font-extrabold">{summary.confidence}%</span>
           </div>
           <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -127,7 +119,7 @@ export const HealthSummarySidebar: React.FC<HealthSummarySidebarProps> = ({
         {/* Disclaimer */}
         <div className="flex items-center gap-1.5 text-[10px] text-slate-400 pt-2 border-t border-slate-100">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-          <span>Triage assistance only. Not a medical diagnosis.</span>
+          <span>Triage guidance only. Not a medical diagnosis.</span>
         </div>
       </div>
 
