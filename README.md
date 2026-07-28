@@ -4,9 +4,12 @@
 
 [![Build Status](https://img.shields.io/badge/Build-Passing-emerald.svg)](https://github.com/aastha-yadav2/Sanjeeveni)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Google Gemma](https://img.shields.io/badge/AI Engine-Google Gemma 2 (9B)--IT-2563EB.svg)](https://ai.google.dev/gemma)
-[![Frontend](https://img.shields.io/badge/Frontend-React 18 %2B TypeScript %2B Vite-06B6D4.svg)](https://react.dev/)
-[![Backend](https://img.shields.io/badge/Backend-FastAPI %2B Python 3.10-059669.svg)](https://fastapi.tiangolo.com/)
+[![Google Gemma](https://img.shields.io/badge/AI-Google%20Gemma%202-4285F4)](https://ai.google.dev/gemma)
+[![React](https://img.shields.io/badge/Frontend-React%2018-61DAFB)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-TypeScript-3178C6)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Build-Vite-646CFF)](https://vite.dev/)
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688)](https://fastapi.tiangolo.com/)
+[![Python](https://img.shields.io/badge/Python-3.10-3776AB)](https://www.python.org/)
 
 ---
 
