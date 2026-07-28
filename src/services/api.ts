@@ -1,8 +1,8 @@
 import { ApiResponse, AssessmentSession, HealthSummary, Language, Report } from '../types/triage';
 import { SUPPORTED_LANGUAGES } from '../data/languages';
 
-// Base URL for FastAPI Backend Engine (Defaults to http://localhost:8000/api)
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+// Primary Render Backend API URL (https://sanjeeveni.onrender.com/api)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://sanjeeveni.onrender.com/api';
 
 export const api = {
   /**
