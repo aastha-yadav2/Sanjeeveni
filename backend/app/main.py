@@ -11,19 +11,34 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# Configure CORS Middleware
+# Configure CORS Middleware for Local & Production Deployment
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=["*"],  # Allows all origins (Render, Vercel, Localhost)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include Routers
+# Include API Routers
 app.include_router(chat.router)
 app.include_router(report.router)
 app.include_router(hospital.router)
+
+@app.get(
+    "/",
+    tags=["Root"],
+    summary="API Root Endpoint",
+    description="Returns welcome message and links to API documentation."
+)
+async def root():
+    return {
+        "message": "Sanjeevani AI FastAPI Engine is live!",
+        "status": "healthy",
+        "docs": "/docs",
+        "health": "/health",
+        "version": "1.0.0"
+    }
 
 @app.get(
     "/health",
